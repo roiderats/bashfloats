@@ -1,0 +1,46 @@
+#!/bin/bash
+TRUE=$(true)
+FALSE=$(false)
+BC=$(which bc)
+ERROUT=/dev/stderr
+
+print_err() {
+  if [ -t 1 ]; then # is fd 1 a term?
+    pre=$(tput setb 4; tput setf 1)
+    aft=$(tput sgr0)
+  fi
+  echo $pre"$*"$aft > $ERROUT
+}
+
+s=""
+while [ $# -gt 0 ]; do
+  if [ "$1" != "}}" ]; then
+    if [ $# -eq 1 ]; then
+      print_err "$0 found no ending }}." 
+      exit $FALSE
+    else
+      s="$s $1"
+    fi
+  else
+    if [ "$s" != "" ]; then
+      bcoutput=$( echo "$s" | bc -l 2>&1 ) 
+      if [[ $bcoutput == *"error"* ]];
+      then
+        echo 0
+        print_err $BC err: $bcoutput
+        exit $FALSE
+      else
+        echo $bcoutput
+        exit $TRUE
+      fi 
+    else
+      echo 0
+      print_err "$0 found nothing to give to $BC"
+      exit $FALSE
+    fi
+  fi
+  shift
+done
+print_err "$0 should not end up here"
+
+
